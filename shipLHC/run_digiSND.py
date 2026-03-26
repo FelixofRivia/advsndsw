@@ -1,5 +1,13 @@
 #!/usr/bin/env python
+import atexit
 firstEvent = 0
+
+def pyExit():
+       "nasty hack"
+       # This is needed to bypass seg violation with exiting cpp digitization
+       # Most likely related to file ownership.
+       os.system('kill '+str(os.getpid()))
+atexit.register(pyExit)
 
 import resource
 def mem_monitor():
@@ -85,7 +93,8 @@ if options.FairTask_digi:
   if "MuFilter" in snd_geo.modules:
       ioman.RegisterInputObject('MuFilter', snd_geo.modules['MuFilter'])
   # Don't use FairRoot's default event header settings
-  run.SetEventHeaderPersistence(False)
+  # if you have alternative custom event header!
+  #run.SetEventHeaderPersistence(False) # uncomment when/if event header class is added
   
   # Set input
   fileSource = ROOT.FairFileSource(options.inputFile)
