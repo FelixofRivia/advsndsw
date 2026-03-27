@@ -72,3 +72,6 @@ list(APPEND PYTHONPATH  "${CMAKE_SOURCE_DIR}/shipLHC/python")
 list(APPEND PYTHONPATH  "${CMAKE_SOURCE_DIR}/shipLHC/rawData")
 
 GENERATE_LIBRARY()
+
+add_executable(digitize digitisation/digitize.cxx)
+target_link_libraries(digitize_mc ${ROOT_LIBRARIES} shipLHC veto FairTools -lROOTTPython)
