@@ -68,3 +68,42 @@ std::unordered_map<std::string, std::vector<Int_t>> AdvDigitisation::digirunoutp
 
     return DigitisedHit;
 }
+
+std::unordered_map<std::string, std::vector<Int_t>> AdvDigitisation::digirunoutput(Int_t detID, const std::vector<const AdvTargetPoint *> &V)
+{
+    std::vector<EnergyFluctUnit> EnergyLossVector;
+    std::vector<SurfaceSignal> DiffusionSignal; 
+    AdvSignal TotalSignal; 
+    AdvSignal FEDResponseSignal;
+    // Charge Division
+    ChargeDivision chargedivision{};
+    chargedivision.Divide(detID, V, EnergyLossVector);
+     
+    // //Charge Drift
+    ChargeDrift chargedrift{};
+    chargedrift.Drift(EnergyLossVector, DiffusionSignal);
+
+    //Induced Charge on strips
+    InducedCharge inducedcharge{};
+    inducedcharge.IntegrateCharge(DiffusionSignal, TotalSignal);
+
+    //Frontend Driver Response 
+    FrontendDriver frontenddriver{};
+    frontenddriver.FEDResponse(TotalSignal, FEDResponseSignal);
+
+    //Creating map of hit 
+    std::unordered_map<std::string, std::vector<Int_t>> DigitisedHit; 
+    std::vector<Double_t> Charge = FEDResponseSignal.getIntegratedSignal();
+    std::vector<Int_t> Strips = FEDResponseSignal.getStrips();
+    std::vector<Int_t> ADC(Charge.size()); 
+
+    std::transform(Charge.begin(), Charge.end(), ADC.begin(), [](Double_t x) { 
+        if (x>0){return (int)x;}
+        else { return 0;}
+        });
+
+    DigitisedHit["Strips"] = Strips; 
+    DigitisedHit["ADC"] = ADC;
+
+    return DigitisedHit;
+}

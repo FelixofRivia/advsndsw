@@ -58,6 +58,7 @@ digitisation/FrontendDriver.cxx
 digitisation/StripNoise.cxx
 digitisation/SiG4UniversalFluctuation.cxx
 digitisation/AdvDigitisation.cxx
+digitisation/DigitizeMCPoints.cxx
 )
 
 Set(HEADERS )

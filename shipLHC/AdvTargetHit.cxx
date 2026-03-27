@@ -40,7 +40,7 @@ AdvTargetHit::AdvTargetHit(Int_t detID)
     }
 }
 
-// -----   constructor from AdvMuFilterPoint   ------------------------------------------
+// -----   constructor from AdvTargetPoint   ------------------------------------------
 AdvTargetHit::AdvTargetHit(Int_t detID, const std::vector<AdvTargetPoint*>& V, TNtuple* dat, std::vector<EnergyFluctUnit>* ChargeDivisionPoint, std::vector<SurfaceSignal>* ChargeDriftPoint, AdvSignal* InducedChargePoint, AdvSignal* FEDResponsePoint)
     : SndlhcHit(detID)
 {
@@ -61,6 +61,21 @@ AdvTargetHit::AdvTargetHit(Int_t detID, const std::vector<AdvTargetPoint*>& V, T
     *ChargeDriftPoint = DiffusionSignal;  
     *InducedChargePoint = TotalSignal; 
     *FEDResponsePoint = FEDResponseSignal;
+
+    for (Int_t i = 0; i < 16; i++) {
+        fMasked[i] = kFALSE;
+    }
+    LOG(DEBUG) << "signal created";
+}
+
+// -----   constructor from AdvTargetPoint   ------------------------------------------
+AdvTargetHit::AdvTargetHit(Int_t detID, const std::vector<const AdvTargetPoint*>& V)
+    : SndlhcHit(detID)
+{
+    AdvDigitisation advdigi{};
+    fDigitisedHit = advdigi.digirunoutput(detID, V);
+    flag = true;
+    size = V.size(); 
 
     for (Int_t i = 0; i < 16; i++) {
         fMasked[i] = kFALSE;

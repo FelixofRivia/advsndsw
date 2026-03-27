@@ -185,3 +185,82 @@ void ChargeDivision::Divide(Int_t detID, const std::vector<AdvTargetPoint*>& V, 
     }
 
 }
+
+void ChargeDivision::Divide(Int_t detID, const std::vector<const AdvTargetPoint*>& V, std::vector<EnergyFluctUnit>& ELossVector)
+{
+    for (int i = 0; i < V.size(); i++) {
+
+        std::vector<Double_t> fluctEnergy;
+        std::vector<TVector3> driftPos;
+        std::vector<TVector3> glob_driftPos;
+        Int_t pdgcode = V[i]->PdgCode();
+
+        //Getting the mass and charge of particle, otherwise assigning pion mass and charge
+
+        if (TDatabasePDG::Instance()->GetParticle(pdgcode)) {
+            ParticleMass = (TDatabasePDG::Instance()->GetParticle(V[i]->PdgCode())->Mass()) * 1000; // in MeV
+            ParticleCharge = TDatabasePDG::Instance()->GetParticle(V[i]->PdgCode())->Charge(); 
+        } else {
+            //std::cout << "Could not find particle " << pdgcode << " , assuming pion mass and charge." << std::endl;
+            ParticleMass = 139.57; 
+            ParticleCharge = 1; 
+
+        };
+
+        //Conversion of global entry and exit point to local coordinates. 
+
+        TVector3 local_entry_point = getLocal(V[i] -> GetDetectorID(), V[i]->GetEntryPoint());
+        TVector3 local_exit_point = getLocal(V[i] -> GetDetectorID(), V[i]->GetExitPoint());
+
+        //Calculating the number of segments in the track by dividing the tracklength by the number of divisions per strip. To get an approximate of the number of strips, divide delta x by the strip pitch. Number of segments is 1 if the particle is neutral or very low mass. 
+
+        double len = (local_entry_point - local_exit_point).Mag();
+
+        if (fabs(ParticleMass) < 1e-6 || ParticleCharge == 0) {
+            NumberofSegments = 1;
+        } else {
+            NumberofSegments = 1
+                               + (stripsensor::chargedivision::ChargeDivisionsperStrip
+                                  * abs((local_entry_point.X() - local_exit_point.X())
+                                        / stripsensor::chargedivision::StripPitch));
+        }
+
+        segLen = (len / NumberofSegments) * 10;   // in mm
+
+        // Getting the energy fluctuations per segment along with the local and global segment position. 
+
+        SiG4UniversalFluctuation sig4fluct{};
+
+        Double_t Etotal = V[i]->GetEnergyLoss() * 1000; // in MeV
+        Double_t Emean = Etotal / NumberofSegments;
+        Double_t momentum = sqrt(pow(V[i]->GetPx(), 2) + pow(V[i]->GetPy(), 2) + pow(V[i]->GetPz(), 2)) * 1000;
+
+        if (NumberofSegments > 1) {
+            for (Int_t j = 0; j < NumberofSegments; j++) {
+                fluctEnergy.push_back(sig4fluct.SampleFluctuations(ParticleMass, ParticleCharge, Emean, momentum, segLen));
+                driftPos.push_back(DriftDir(local_entry_point, local_exit_point, (segLen * (j+0.5)) / 10));
+                glob_driftPos.push_back(DriftDir(V[i]->GetEntryPoint(), V[i]->GetExitPoint(), (segLen * (j+0.5)) / 10));
+            }
+        } else {
+            fluctEnergy.push_back(V[i]->GetEnergyLoss() * 1000);
+            driftPos.push_back(DriftDir(local_entry_point, local_exit_point, (segLen*0.5) / 10));
+            glob_driftPos.push_back(DriftDir(V[i]->GetEntryPoint(), V[i]->GetExitPoint(), (segLen*0.5) / 10));
+        }
+
+        // Scaling each fluctuation accordingly with the total energy loss 
+
+        double sume = 0;
+        for (int n = 0; n < size(fluctEnergy); n++) {
+            sume = sume + fluctEnergy[n];
+        }
+        if (sume > 0.) {
+            float rescale_ratio = Etotal / sume;
+            for (int m = 0; m < size(fluctEnergy); m++) {
+                fluctEnergy[m] = (fluctEnergy[m] * rescale_ratio) / 1000;
+            }
+        }
+        EnergyFluctUnit EnergyFluctuations(fluctEnergy, segLen / 10, driftPos, glob_driftPos);
+        ELossVector.push_back(EnergyFluctuations);
+    }
+
+}

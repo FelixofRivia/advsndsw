@@ -24,6 +24,7 @@ class AdvTargetHit : public SndlhcHit
 
     // Constructor from AdvTargetPoint
     AdvTargetHit(Int_t detID, const std::vector<AdvTargetPoint*>& V, TNtuple* dat, std::vector<EnergyFluctUnit>* ChargeDivisionPoint, std::vector<SurfaceSignal>* ChargeDriftPoint, AdvSignal* InducedChargePoint, AdvSignal* FEDResponsePoint);
+    AdvTargetHit(Int_t detID, const std::vector<const AdvTargetPoint*>& V);
 
     /** Destructor **/
     ~AdvTargetHit() = default;
