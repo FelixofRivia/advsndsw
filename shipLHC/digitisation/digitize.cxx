@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     //use_rntuple ? "/afs/cern.ch/work/f/fmei/private/RNTuples-for-advsndsw/dataset/rntuples-sndLHC.Ntuple-TGeant4.root" : "/afs/cern.ch/work/f/fmei/private/RNTuples-for-advsndsw/dataset/sndLHC.Ntuple-TGeant4-surgery.root";
     std::string output_file = argv[3];
     //use_rntuple ? "/afs/cern.ch/work/f/fmei/private/RNTuples-for-advsndsw/dataset/rntuples-df-compiled-sndLHC.Ntuple-TGeant4_digCPP.root" : "/afs/cern.ch/work/f/fmei/private/RNTuples-for-advsndsw/dataset/ttree-df-compiled-sndLHC.Ntuple-TGeant4_digCPP.root";
-    auto df = ROOT::RDataFrame("cbmsim", input_file);
+    auto df = ROOT::RDataFrame("cbmsim", input_file).Range(1000);
 
     std::string geometry_path = "/afs/cern.ch/work/f/fmei/private/RNTuples-for-advsndsw/dataset/geofile_full.Ntuple-TGeant4.root";
     TGeoNavigator* nav = initGeometry(geometry_path);
