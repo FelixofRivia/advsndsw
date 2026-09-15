@@ -2,10 +2,10 @@ import subprocess
 import logging
 import time
 
-def run_dqm(directories, run_number):
+def run_dqm(directories, run_number, mode, nthreads):
     tag = f"[run {run_number:06d}]"
 
-    input_root_file = directories['converted'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_rntuple.root"
+    input_root_file = directories['digi_benchmark'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_{mode}.root"
     output_root_file = directories['histos'] / f"run{run_number:06d}_dqm.root"
 
     source_advsndsw = "source /opt/run4/software/setUp.sh"
@@ -23,7 +23,7 @@ def run_dqm(directories, run_number):
         {alienv} &&
         executable="$ADVSNDSW_ROOT/bin/run_real_time_monitoring" &&
         detinfo_csv="$ADVSNDSW_ROOT/{mapping_file}" &&
-        "$executable" "{input_root_file}" "$detinfo_csv" "{directories['geometry']}" "{output_root_file}" 2
+        "$executable" "{input_root_file}" "$detinfo_csv" "{directories['geometry']}" "{output_root_file}" "{nthreads}"
         """
 
     logging.debug("%s Running DQM command: %s", tag, command)
@@ -47,3 +47,5 @@ def run_dqm(directories, run_number):
         logging.error("%s DQM subprocess stderr:\n%s", tag, result.stderr)
 
     logging.info("%s DQM finished in %.2f seconds", tag, duration)
+    
+    return duration

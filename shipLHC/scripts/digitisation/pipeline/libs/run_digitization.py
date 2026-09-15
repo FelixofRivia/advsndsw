@@ -1,8 +1,9 @@
 import subprocess
 import logging
 import time
+import os
 
-def run_digitization(directories, run_number):
+def run_digitization(directories, run_number, mode):
     tag = f"[run {run_number:06d}]"
 
     input_root_file = (directories['converted'] / f"run{run_number:06d}" / f"run{run_number:06d}_converted.root")
@@ -15,37 +16,46 @@ def run_digitization(directories, run_number):
         if run_number <= 386
         else "shipLHC/digitisation/rawToDigi/mapping/detector_info_tb_7_2026.csv"
     )
-    modes = ["rntuple", "ttree"]
 
-    for mode in modes:
-        output_root_file = (directories['converted'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_{mode}.root")
 
-        command = f"""
-        {source_advsndsw} &&
-        {alienv} &&
-        executable="$ADVSNDSW_ROOT/bin/run_raw_to_digi" &&
-        detinfo_csv="$ADVSNDSW_ROOT/{mapping_file}" &&
-        "$executable" "{input_root_file}" "$detinfo_csv" "{output_root_file}" "{mode}"
-        """
+    output_root_file = (directories['digi_benchmark'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_{mode}.root")
 
-        logging.debug("%s Running Digitization (%s): %s", tag, mode, command)
+    command = f"""
+    {source_advsndsw} &&
+    {alienv} &&
+    executable="$ADVSNDSW_ROOT/bin/run_raw_to_digi" &&
+    detinfo_csv="$ADVSNDSW_ROOT/{mapping_file}" &&
+    "$executable" "{input_root_file}" "$detinfo_csv" "{output_root_file}" "{mode}"
+    """
 
-        start = time.perf_counter()
+    logging.debug("%s Running Digitization (%s): %s", tag, mode, command)
 
-        result = subprocess.run(
-            command,
-            shell=True,
-            executable="/bin/bash",
-            capture_output=True,
-            text=True
-        )
+    start = time.perf_counter()
 
-        duration = time.perf_counter() - start
+    result = subprocess.run(
+        command,
+        shell=True,
+        executable="/bin/bash",
+        capture_output=True,
+        text=True
+    )
 
-        if result.stdout:
-            logging.info("%s [%s] stdout:\n%s", tag, mode, result.stdout)
+    duration = time.perf_counter() - start
 
-        if result.stderr:
-            logging.error("%s [%s] stderr:\n%s", tag, mode, result.stderr)
+    if result.stdout:
+        logging.info("%s [%s] stdout:\n%s", tag, mode, result.stdout)
 
-        logging.info("%s [%s] finished in %.2f seconds", tag, mode, duration)
+    if result.stderr:
+        logging.error("%s [%s] stderr:\n%s", tag, mode, result.stderr)
+
+    logging.info("%s [%s] finished in %.2f seconds", tag, mode, duration)
+
+    # Get file size in MB
+    try:
+        file_size_mb = os.path.getsize(output_root_file) / (1024 ** 2)
+        logging.info("%s [%s] output file size: %.2f MB", tag, mode, file_size_mb)
+    except FileNotFoundError:
+        logging.warning("%s [%s] output file not found", tag, mode)
+        file_size_mb = None
+
+    return duration, file_size_mb
