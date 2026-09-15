@@ -243,21 +243,21 @@ int main(int argc, char* argv[]){
     auto hX = histos_1d_global[0].GetPtr();  // "x" from x_vertical  
     auto hY = histos_1d_global[1].GetPtr();  // "y" from y_not_vertical  
     
-    TH2D* h2 = new TH2D("beam spot", "beam spot;x [cm];y [cm]",  
-        200, hX->GetXaxis()->GetXmin(), hX->GetXaxis()->GetXmax(),  // reduced from 1000  
-        200, hY->GetXaxis()->GetXmin(), hY->GetXaxis()->GetXmax()  
-    );  
+    // TH2D* h2 = new TH2D("beam spot", "beam spot;x [cm];y [cm]",  
+    //     200, hX->GetXaxis()->GetXmin(), hX->GetXaxis()->GetXmax(),  // reduced from 1000  
+    //     200, hY->GetXaxis()->GetXmin(), hY->GetXaxis()->GetXmax()  
+    // );  
     
-    for (int i = 1; i <= h2->GetNbinsX(); i++) {  
-        for (int j = 1; j <= h2->GetNbinsY(); j++) {  
-            // Interpolate since we're changing bin count from 1000 to 200  
-            double x = h2->GetXaxis()->GetBinCenter(i);  
-            double y = h2->GetYaxis()->GetBinCenter(j);  
-            h2->SetBinContent(i, j, hX->Interpolate(x) * hY->Interpolate(y));  
-        }  
-    }
+    // for (int i = 1; i <= h2->GetNbinsX(); i++) {  
+    //     for (int j = 1; j <= h2->GetNbinsY(); j++) {  
+    //         // Interpolate since we're changing bin count from 1000 to 200  
+    //         double x = h2->GetXaxis()->GetBinCenter(i);  
+    //         double y = h2->GetYaxis()->GetBinCenter(j);  
+    //         h2->SetBinContent(i, j, hX->Interpolate(x) * hY->Interpolate(y));  
+    //     }  
+    // }
 
-    h2->Write();
+    // h2->Write();
 
     for (auto& h : histos_2d_global) {
         h->Write();
