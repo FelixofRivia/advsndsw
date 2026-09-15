@@ -92,6 +92,7 @@ def main():
                     "dqm_rntuple_4thread_time_s": f"{dqm_t_rntuple_4:.2f}" if dqm_t_rntuple_4 is not None else "",
                 }
                 writer.writerow(row)
+                f.flush()
                 logging.info("Benchmarks for run %s written to CSV", run_number)
 
     except KeyboardInterrupt:
