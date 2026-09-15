@@ -2,6 +2,7 @@ import subprocess
 import logging
 import time
 import os
+import resource
 
 def run_digitization(directories, run_number, mode):
     tag = f"[run {run_number:06d}]"
@@ -58,4 +59,9 @@ def run_digitization(directories, run_number, mode):
         logging.warning("%s [%s] output file not found", tag, mode)
         file_size_mb = None
 
-    return duration, file_size_mb
+    # Get resource usage of current process
+    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+    max_memory_mb = usage.ru_maxrss / 1024  # Convert KB to MB
+    logging.info("%s [%s] Max memory: %.2f MB", tag, mode, max_memory_mb)
+
+    return duration, file_size_mb, max_memory_mb

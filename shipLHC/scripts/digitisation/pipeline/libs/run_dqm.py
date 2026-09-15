@@ -1,6 +1,7 @@
 import subprocess
 import logging
 import time
+import resource
 
 def run_dqm(directories, run_number, mode, nthreads):
     tag = f"[run {run_number:06d}]"
@@ -47,5 +48,10 @@ def run_dqm(directories, run_number, mode, nthreads):
         logging.error("%s DQM subprocess stderr:\n%s", tag, result.stderr)
 
     logging.info("%s DQM finished in %.2f seconds", tag, duration)
+
+    # Get resource usage of current process
+    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+    max_memory_mb = usage.ru_maxrss / 1024  # Convert KB to MB
+    logging.info("%s [%s] Max memory: %.2f MB", tag, mode, max_memory_mb)
     
-    return duration
+    return duration, max_memory_mb
