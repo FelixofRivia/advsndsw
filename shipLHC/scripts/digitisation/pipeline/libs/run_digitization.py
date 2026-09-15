@@ -18,7 +18,7 @@ def run_digitization(directories, run_number, mode):
     )
 
 
-    output_root_file = (directories['digi_benchmark'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_{mode}.root")
+    output_root_file = (directories['converted'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_{mode}.root")
 
     command = f"""
     {source_advsndsw} &&

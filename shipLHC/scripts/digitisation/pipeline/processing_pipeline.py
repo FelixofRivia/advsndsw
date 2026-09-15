@@ -10,8 +10,7 @@ from libs.run_dqm import run_dqm
 def main():
     directories = {
         "raw" : Path("/eos/experiment/sndlhc/Run4/testbeam2026/raw_data"),
-        "converted" : Path("/eos/experiment/sndlhc/Run4/testbeam2026/converted_data"),
-        "digi_benchmark" : Path("/eos/experiment/sndlhc/Run4/testbeam2026/digi_benchmark"),
+        "converted" : Path("/eos/experiment/sndlhc/Run4/testbeam2026/digi_benchmark"),
         "histos" : Path("/eos/experiment/sndlhc/Run4/testbeam2026/digi_benchmark"),
         "geometry" : Path("/eos/experiment/sndlhc/Run4/testbeam2026/converted_data/geofile_testbeam_2026.root"),
         "logs" : Path("/eos/experiment/sndlhc/www/testbeam2026/logs"),

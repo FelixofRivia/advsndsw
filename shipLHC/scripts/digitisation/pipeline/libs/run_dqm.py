@@ -5,7 +5,7 @@ import time
 def run_dqm(directories, run_number, mode, nthreads):
     tag = f"[run {run_number:06d}]"
 
-    input_root_file = directories['digi_benchmark'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_{mode}.root"
+    input_root_file = directories['converted'] / f"run{run_number:06d}" / f"run{run_number:06d}_digi_{mode}.root"
     output_root_file = directories['histos'] / f"run{run_number:06d}_dqm.root"
 
     source_advsndsw = "source /opt/run4/software/setUp.sh"
