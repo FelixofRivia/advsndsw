@@ -12,7 +12,7 @@ specs_file="${output_csv%.csv}_specs.txt"
 command=(python "$ADVSNDSW_ROOT/shipLHC/run_digiSND.py" \
     -f /eos/experiment/sndlhc/Run4/testbeam2026/digi_benchmark/mc_benchmark/electron_100/sndLHC.PG_11-TGeant4.root \
     -g /eos/experiment/sndlhc/Run4/testbeam2026/digi_benchmark/mc_benchmark/electron_100/geofile_full.PG_11-TGeant4.root \
-    -n 10)
+    -n 10000)
 
 # Collect system specifications
 {
