@@ -37,10 +37,21 @@ command=(python "$ADVSNDSW_ROOT/shipLHC/run_digiSND.py" \
     echo "  Current: ${current_mhz} MHz"
     [[ -n $max_mhz ]] && echo "  Max: ${max_mhz} MHz"
     echo ""
+    echo "Cache Strategy: COLD (best-effort via memory allocation, no sudo)"
+    echo ""
     echo "--- Benchmark Command ---"
     echo "${command[@]}"
     echo ""
 } | tee "$specs_file"
+
+# Function to evict cache by allocating large temporary data
+evict_cache_best_effort() {
+    local available_mb=$(($(grep MemAvailable /proc/meminfo | awk '{print $2}') / 1024))
+    local alloc_mb=$((available_mb + 1024))  # Allocate more than available
+    
+    echo "  Allocating ${alloc_mb}MB to evict cache..."
+    dd if=/dev/zero bs=1M count=$alloc_mb 2>/dev/null | head -c $((alloc_mb * 1024 * 1024)) > /dev/null
+}
 
 # Run benchmark
 echo "iteration,runtime_seconds,max_ram_mb,exit_code" > "$output_csv"
@@ -48,6 +59,12 @@ echo "iteration,runtime_seconds,max_ram_mb,exit_code" > "$output_csv"
 echo "Running $n iterations..."
 for ((i = 1; i <= n; i++)); do
     echo "[$(date '+%H:%M:%S')] Iteration $i/$n..."
+    
+    # Best-effort cache eviction
+    if [[ $i -gt 1 ]]; then
+        evict_cache_best_effort
+        sleep 1
+    fi
     
     start_time=$(date +%s.%N)
     
@@ -81,4 +98,3 @@ echo "✓ Specifications: $specs_file"
 echo "✓ Results: $output_csv"
 echo ""
 cat "$output_csv"
-
