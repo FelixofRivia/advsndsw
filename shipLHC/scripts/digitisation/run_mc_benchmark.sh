@@ -1,10 +1,5 @@
 #!/bin/bash
 
-##############################################################################
-# Script: profile_snd.sh
-# Purpose: Run sndLHC digitization n times, measure runtime and peak RAM usage
-##############################################################################
-
 if [[ $# -lt 2 ]]; then
     echo "Usage: $0 <n> <output_csv>"
     exit 1
@@ -12,52 +7,72 @@ fi
 
 n=$1
 output_csv=$2
+specs_file="${output_csv%.csv}_specs.txt"
 
-# The command to run (with environment variable)
 command=(python "$ADVSNDSW_ROOT/shipLHC/run_digiSND.py" \
     -f /eos/experiment/sndlhc/Run4/testbeam2026/digi_benchmark/mc_benchmark/electron_100/sndLHC.PG_11-TGeant4.root \
     -g /eos/experiment/sndlhc/Run4/testbeam2026/digi_benchmark/mc_benchmark/electron_100/geofile_full.PG_11-TGeant4.root \
-    -n 10000)
+    -n 10)
 
-# Initialize CSV with headers
+# Collect system specifications
+{
+    echo "========================================="
+    echo "BENCHMARK SYSTEM SPECIFICATIONS"
+    echo "========================================="
+    echo "Date: $(date)"
+    echo ""
+    echo "vCPUs: $(nproc)"
+    echo "Total RAM (GB): $(echo "scale=1; $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1048576" | bc)"
+    echo "Hypervisor: $(systemd-detect-virt)"
+    echo "Kernel: $(uname -r)"
+    echo "OS: $(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)"
+    echo "Python: $(python --version 2>&1)"
+    echo ""
+    echo "CPU Model:"
+    lscpu | grep "Model name"
+    echo ""
+    echo "--- Benchmark Command ---"
+    echo "${command[@]}"
+    echo ""
+} | tee "$specs_file"
+
+# Run benchmark
 echo "iteration,runtime_seconds,max_ram_mb,exit_code" > "$output_csv"
 
-echo "Running command $n times..."
-echo "Command: ${command[@]}"
-echo ""
-
-# Run command n times
+echo "Running $n iterations..."
 for ((i = 1; i <= n; i++)); do
     echo "[$(date '+%H:%M:%S')] Iteration $i/$n..."
     
-    # Create temp file for time output
-    temp_time_output=$(mktemp)
+    start_time=$(date +%s.%N)
     
-    # Run command and capture timing/memory info
-    /usr/bin/time -v -o "$temp_time_output" "${command[@]}" > /dev/null 2>&1
+    "${command[@]}" > /tmp/snd_run_$i.log 2>&1 &
+    pid=$!
+    
+    max_ram=0
+    while kill -0 $pid 2>/dev/null; do
+        [[ -r /proc/$pid/status ]] && \
+        rss=$(grep "^VmRSS:" /proc/$pid/status | awk '{print $2}') && \
+        [[ $rss -gt $max_ram ]] && max_ram=$rss
+        sleep 0.5
+    done
+    
+    wait $pid
     exit_code=$?
     
-    # Extract metrics
-    elapsed=$(grep "Elapsed (wall clock) time" "$temp_time_output" | awk -F'[m:]' '{print ($1 * 60) + $2}')
-    max_ram=$(grep "Maximum resident set size" "$temp_time_output" | awk '{print $6}')
-    
-    # Convert max_ram from KB to MB
+    end_time=$(date +%s.%N)
+    elapsed=$(echo "$end_time - $start_time" | bc)
     max_ram_mb=$(echo "scale=2; $max_ram / 1024" | bc)
     
-    # Append to CSV
     echo "$i,$elapsed,$max_ram_mb,$exit_code" >> "$output_csv"
     
-    if [[ $exit_code -eq 0 ]]; then
-        echo "  ✓ Completed: ${elapsed}s runtime, ${max_ram_mb}MB peak RAM"
-    else
+    [[ $exit_code -eq 0 ]] && \
+        echo "  ✓ ${elapsed}s, ${max_ram_mb}MB" || \
         echo "  ✗ Exit code: $exit_code"
-    fi
-    
-    rm "$temp_time_output"
 done
 
 echo ""
-echo "✓ Results saved to: $output_csv"
+echo "✓ Specifications: $specs_file"
+echo "✓ Results: $output_csv"
 echo ""
-echo "Summary:"
 cat "$output_csv"
+
