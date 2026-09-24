@@ -31,6 +31,12 @@ command=(python "$ADVSNDSW_ROOT/shipLHC/run_digiSND.py" \
     echo "CPU Model:"
     lscpu | grep "Model name"
     echo ""
+    current_mhz=$(grep -m1 "cpu MHz" /proc/cpuinfo | awk '{print $NF}')
+    max_mhz=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq 2>/dev/null | awk '{printf "%.2f", $1/1000}')
+    echo "CPU Frequency:"
+    echo "  Current: ${current_mhz} MHz"
+    [[ -n $max_mhz ]] && echo "  Max: ${max_mhz} MHz"
+    echo ""
     echo "--- Benchmark Command ---"
     echo "${command[@]}"
     echo ""
