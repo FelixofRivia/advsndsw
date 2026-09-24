@@ -42,7 +42,7 @@ tmp     = options.inputFile.split('/')
 outFile = tmp[len(tmp)-1].replace('.root','_dig.root')
 if options.inputFile.find('/eos')==0:
    if options.FairTask_digi:
-       options.inputFile = os.environ['EOSSHIP']+options.inputFile
+       options.inputFile = options.inputFile
    else:   
        os.system('xrdcp '+os.environ['EOSSHIP']+options.inputFile+' '+outFile)
 else:
@@ -52,8 +52,6 @@ else:
 # -----Create geometry----------------------------------------------
 import shipLHC_conf as sndDet_conf
 
-if options.geoFile.find('/eos')==0:
-       options.geoFile = os.environ['EOSSHIP']+options.geoFile
 import SndlhcGeo
 snd_geo = SndlhcGeo.GeoInterface(options.geoFile)
 
