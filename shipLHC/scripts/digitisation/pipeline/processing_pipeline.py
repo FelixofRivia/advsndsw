@@ -30,12 +30,11 @@ def main():
 
     logging.info("Directories configuration:\n%s", "\n".join(f"[{k}] -> {v}" for k, v in directories.items()))
 
-    runs = [int(p.name.replace("run", "")) for p in directories["raw"].glob("run*") if int(p.name.replace("run", "")) >= 273]
-
+    #runs = [int(p.name.replace("run", "")) for p in directories["raw"].glob("run*") if int(p.name.replace("run", "")) >= 273]
+    runs = [1001334, ]
     # CSV file path
     csv_file = directories["logs"] / "benchmarks.csv"
     
-    # CSV headers
     headers = [
         "run_number",
         "digitization_ttree_time_s",
@@ -44,74 +43,69 @@ def main():
         "digitization_rntuple_time_s",
         "digitization_rntuple_size_mb",
         "digitization_rntuple_memory_mb",
-        "dqm_ttree_1thread_time_s",
-        "dqm_ttree_1thread_memory_mb",
-        "dqm_ttree_2thread_time_s",
-        "dqm_ttree_2thread_memory_mb",
-        "dqm_ttree_3thread_time_s",
-        "dqm_ttree_3thread_memory_mb",
-        "dqm_ttree_4thread_time_s",
-        "dqm_ttree_4thread_memory_mb",
-        "dqm_rntuple_1thread_time_s",
-        "dqm_rntuple_1thread_memory_mb",
-        "dqm_rntuple_2thread_time_s",
-        "dqm_rntuple_2thread_memory_mb",
-        "dqm_rntuple_3thread_time_s",
-        "dqm_rntuple_3thread_memory_mb",
-        "dqm_rntuple_4thread_time_s",
-        "dqm_rntuple_4thread_memory_mb",
-    ]
+        *[
+            f"dqm_{fmt}_{n}thread_{metric}"
+            for fmt in ("ttree", "rntuple")
+            for n in range(1, 9)
+            for metric in ("time_s", "memory_mb")
+        ],
+]
 
-    try:
-        # Open CSV file in append mode
-        with open(csv_file, mode='a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=headers)
-            
-            # Write header only if file is empty
-            if f.tell() == 0:
-                writer.writeheader()
-            
-            for run_number in runs:
-                logging.info("Selected run: %s", run_number)
-                
-                rtg_t_ttree, rtg_size_ttree, rtg_mem_ttree = run_digitization(directories, run_number, "ttree")
-                rtg_t_rntuple, rtg_size_rntuple, rtg_mem_rntuple = run_digitization(directories, run_number, "rntuple")
-                dqm_t_ttree_1, dqm_mem_ttree_1 = run_dqm(directories, run_number, "ttree", 1)
-                dqm_t_ttree_2, dqm_mem_ttree_2 = run_dqm(directories, run_number, "ttree", 2)
-                dqm_t_ttree_3, dqm_mem_ttree_3 = run_dqm(directories, run_number, "ttree", 3)
-                dqm_t_ttree_4, dqm_mem_ttree_4 = run_dqm(directories, run_number, "ttree", 4)
-                dqm_t_rntuple_1, dqm_mem_rntuple_1 = run_dqm(directories, run_number, "rntuple", 1)
-                dqm_t_rntuple_2, dqm_mem_rntuple_2 = run_dqm(directories, run_number, "rntuple", 2)
-                dqm_t_rntuple_3, dqm_mem_rntuple_3 = run_dqm(directories, run_number, "rntuple", 3)
-                dqm_t_rntuple_4, dqm_mem_rntuple_4 = run_dqm(directories, run_number, "rntuple", 4)
+try:
+    with open(csv_file, mode="a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
 
-                
-                # Write row to CSV
-                row = {
-                    "run_number": run_number,
-                    "digitization_ttree_time_s": f"{rtg_t_ttree:.2f}" if rtg_t_ttree is not None else "",
-                    "digitization_ttree_size_mb": f"{rtg_size_ttree:.2f}" if rtg_size_ttree is not None else "",
-                    "digitization_ttree_memory_mb": f"{rtg_mem_ttree:.2f}" if rtg_mem_ttree is not None else "",
-                    "digitization_rntuple_time_s": f"{rtg_t_rntuple:.2f}" if rtg_t_rntuple is not None else "",
-                    "digitization_rntuple_size_mb": f"{rtg_size_rntuple:.2f}" if rtg_size_rntuple is not None else "",
-                    "digitization_rntuple_memory_mb": f"{rtg_mem_rntuple:.2f}" if rtg_mem_rntuple is not None else "",
-                    "dqm_ttree_1thread_time_s": f"{dqm_t_ttree_1:.2f}" if dqm_t_ttree_1 is not None else "",
-                    "dqm_ttree_1thread_memory_mb": f"{dqm_mem_ttree_1:.2f}" if dqm_mem_ttree_1 is not None else "",
-                    "dqm_ttree_2thread_time_s": f"{dqm_t_ttree_2:.2f}" if dqm_t_ttree_2 is not None else "",
-                    "dqm_ttree_2thread_memory_mb": f"{dqm_mem_ttree_2:.2f}" if dqm_mem_ttree_2 is not None else "",
-                    "dqm_ttree_3thread_time_s": f"{dqm_t_ttree_3:.2f}" if dqm_t_ttree_3 is not None else "",
-                    "dqm_ttree_3thread_memory_mb": f"{dqm_mem_ttree_3:.2f}" if dqm_mem_ttree_3 is not None else "",
-                    "dqm_ttree_4thread_time_s": f"{dqm_t_ttree_4:.2f}" if dqm_t_ttree_4 is not None else "",
-                    "dqm_ttree_4thread_memory_mb": f"{dqm_mem_ttree_4:.2f}" if dqm_mem_ttree_4 is not None else "",
-                    "dqm_rntuple_1thread_time_s": f"{dqm_t_rntuple_1:.2f}" if dqm_t_rntuple_1 is not None else "",
-                    "dqm_rntuple_1thread_memory_mb": f"{dqm_mem_rntuple_1:.2f}" if dqm_mem_rntuple_1 is not None else "",
-                    "dqm_rntuple_2thread_time_s": f"{dqm_t_rntuple_2:.2f}" if dqm_t_rntuple_2 is not None else "",
-                    "dqm_rntuple_2thread_memory_mb": f"{dqm_mem_rntuple_2:.2f}" if dqm_mem_rntuple_2 is not None else "",
-                    "dqm_rntuple_3thread_time_s": f"{dqm_t_rntuple_3:.2f}" if dqm_t_rntuple_3 is not None else "",
-                    "dqm_rntuple_3thread_memory_mb": f"{dqm_mem_rntuple_3:.2f}" if dqm_mem_rntuple_3 is not None else "",
-                    "dqm_rntuple_4thread_time_s": f"{dqm_t_rntuple_4:.2f}" if dqm_t_rntuple_4 is not None else "",
-                    "dqm_rntuple_4thread_memory_mb": f"{dqm_mem_rntuple_4:.2f}" if dqm_mem_rntuple_4 is not None else "",
-                }
+        if f.tell() == 0:
+            writer.writeheader()
+
+        for run_number in runs:
+            logging.info("Selected run: %s", run_number)
+
+            rtg_t_ttree, rtg_size_ttree, rtg_mem_ttree = run_digitization(
+                directories, run_number, "ttree"
+            )
+            rtg_t_rntuple, rtg_size_rntuple, rtg_mem_rntuple = run_digitization(
+                directories, run_number, "rntuple"
+            )
+
+            # Run DQM for both formats with 1 through 8 threads.
+            dqm_results = {
+                (fmt, n): run_dqm(directories, run_number, fmt, n)
+                for fmt in ("ttree", "rntuple")
+                for n in range(1, 9)
+            }
+
+            row = {
+                "run_number": run_number,
+                "digitization_ttree_time_s": (
+                    f"{rtg_t_ttree:.2f}" if rtg_t_ttree is not None else ""
+                ),
+                "digitization_ttree_size_mb": (
+                    f"{rtg_size_ttree:.2f}" if rtg_size_ttree is not None else ""
+                ),
+                "digitization_ttree_memory_mb": (
+                    f"{rtg_mem_ttree:.2f}" if rtg_mem_ttree is not None else ""
+                ),
+                "digitization_rntuple_time_s": (
+                    f"{rtg_t_rntuple:.2f}" if rtg_t_rntuple is not None else ""
+                ),
+                "digitization_rntuple_size_mb": (
+                    f"{rtg_size_rntuple:.2f}" if rtg_size_rntuple is not None else ""
+                ),
+                "digitization_rntuple_memory_mb": (
+                    f"{rtg_mem_rntuple:.2f}" if rtg_mem_rntuple is not None else ""
+                ),
+            }
+
+            for (fmt, n), (dqm_time, dqm_memory) in dqm_results.items():
+                row[f"dqm_{fmt}_{n}thread_time_s"] = (
+                    f"{dqm_time:.2f}" if dqm_time is not None else ""
+                )
+                row[f"dqm_{fmt}_{n}thread_memory_mb"] = (
+                    f"{dqm_memory:.2f}" if dqm_memory is not None else ""
+                )
+
+            writer.writerow(row)
                 writer.writerow(row)
                 f.flush()
                 logging.info("Benchmarks for run %s written to CSV", run_number)
